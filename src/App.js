@@ -172,9 +172,7 @@ React.useEffect(()=>{
     {bridgeInitText}
       <h3>Coco Balance: {cocoBalance/100000}</h3>
 </div>
-<div className="function">
-<button onClick={()=>meta()}>meta</button>
-<button onClick={()=>stop()}>stop</button></div>
+
 
      <Outlet />
     </div>
