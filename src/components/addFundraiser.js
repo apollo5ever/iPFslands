@@ -45,9 +45,19 @@ export default function CreateFund() {
       console.log(owner)
 
 
+    var index = 0
     var burn = 100000
-    if(!owner) burn = 1000000
-
+    if(!owner){
+       burn = 1000000
+       
+    }else{
+      var search2= new RegExp(`${sha256(event.target.island.value).toString()}.*_sm`)
+      console.log(search2)
+      let fundList = Object.keys(res0.data.result.stringkeys)
+      .filter(key => search2.test(key))
+      console.log(fundList)
+      index = fundList.length
+    }
     var deadline = new Date(event.target.deadline.value).getTime()/1000
     console.log("DATE",deadline)
 
@@ -56,9 +66,8 @@ export default function CreateFund() {
       "goal": event.target.goal.value,
       "deadline": deadline,
       "tagline": event.target.tagline.value,
-      "index": event.target.index.value,
+      "index": index,
       "description": event.target.description.value,
-      "status":0,
       "image":event.target.fundPhoto.value,
       "island":event.target.island.value
       
@@ -118,7 +127,7 @@ export default function CreateFund() {
       {
         "name": "i",
         "datatype": "U",
-        "value": parseInt(event.target.index.value)
+        "value": index
       },
       {
         "name": "M",
@@ -157,14 +166,13 @@ export default function CreateFund() {
       <p>If you already own an island, adding a smoke signal costs 1 Coco. Please ensure island name matches exactly, or it will be considered fraudulent and won't be displayed. If you don't already have an island, this will create one for you and it will cost you 10 Coco.</p>
       <form onSubmit={DoIt}>
         <input placeholder="Island (case-sensitive)" id="island" type="text" />
-        <input placeholder="Index" id="index" type="text" />
         <input placeholder="Name" id="fundName" type="text" />
         <input placeholder="Image URL" id="fundPhoto" type="text"/>
         <input placeholder="Tagline" id="tagline" type="text" />
         <p>Deadline</p>
         <input type="date" id="deadline" name="deadline"></input>
         
-        <input placeholder="Description" id="description" type="text" />
+        <textarea placeholder="Description" rows="44" cols="80" id="description"/>
         <input placeholder="Goal" id="goal" type="text" />
         <input placeholder="Address" id="address" type="text" />
         <button type={"submit"}>Create</button>

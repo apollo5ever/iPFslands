@@ -8,7 +8,7 @@ import sha256 from 'crypto-js/sha256'
 import { LoginContext } from '../LoginContext';
 
 
-export default function buryTreasure() {
+export default function BuryTreasure() {
 
     
     
@@ -23,20 +23,46 @@ export default function buryTreasure() {
 
   const DoIt = React.useCallback(async (event) => {
     event.preventDefault();
-    var burn = 100000
-    if(event.target.index.value==0) burn = 1000000
 
-    var deadline = new Date(event.target.deadline.value).getTime()/1000
-    console.log("DATE",deadline)
+    const deroBridgeApi = state.deroBridgeApiRef.current
+    const [err0, res0] = await to(deroBridgeApi.daemon('get-sc', {
+            scid:state.scid,
+            code:false,
+            variables:true
+    }))
+  
+ 
+    
+
+
+
+    var search= sha256(event.target.island.value).toString()+"_Owner"
+    console.log("search",search)
+    var owner = res0.data.result.stringkeys[search]
+    console.log(owner)
+
+    var index = 0
+    var burn = 100000
+    if(!owner){
+       burn = 1000000
+       
+    }else{
+      var search2= new RegExp(`${sha256(event.target.island.value).toString()}.*_bm`)
+      console.log(search2)
+      let bountyList = Object.keys(res0.data.result.stringkeys)
+      .filter(key => search2.test(key))
+      console.log(bountyList)
+      index = bountyList.length
+    }
+    var expiry = new Date(event.target.expiry.value).getTime()/1000
+    
 
     var obj = {
       "name": event.target.fundName.value,
-      "goal": event.target.goal.value,
-      "deadline": deadline,
+      "expiry": expiry,
       "tagline": event.target.tagline.value,
-      "index": event.target.index.value,
+      "index": index,
       "description": event.target.description.value,
-      "status":0,
       "image":event.target.fundPhoto.value,
       "island":event.target.island.value
       
@@ -55,7 +81,7 @@ export default function buryTreasure() {
 
    
   
-    const deroBridgeApi = state.deroBridgeApiRef.current
+  
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
       "scid": state.scid,
       "ringsize": 2,
@@ -63,6 +89,10 @@ export default function buryTreasure() {
         {
           "scid": state.scid,
           "burn": burn
+        },{
+          "destination":state.randomAddress,
+          "amount":parseInt(event.target.treasure.value)*100000
+
         }
       ],
       "sc_rpc": [{
@@ -79,7 +109,7 @@ export default function buryTreasure() {
       {
         "name": "i",
         "datatype": "U",
-        "value": parseInt(event.target.index.value)
+        "value": index
       },
       {
         "name": "J",
@@ -89,12 +119,17 @@ export default function buryTreasure() {
       {
         "name": "E",
         "datatype": "U",
-        "value": event.target.expiry.value
+        "value": expiry
       },
       {
         "name": "S",
         "datatype": "U",
         "value": 1
+      },
+      {
+        "name": "M",
+        "datatype": "S",
+        "value": "M"
       },
      
       {
@@ -129,17 +164,18 @@ export default function buryTreasure() {
       
       <form onSubmit={DoIt}>
         <input placeholder="Island (case-sensitive)" id="island" type="text" />
-        <input placeholder="Index" id="index" type="text" />
+        
         <input placeholder="Name" id="fundName" type="text" />
         <input placeholder="Image URL" id="fundPhoto" type="text"/>
         <input placeholder="Tagline" id="tagline" type="text" />
+        <input placeholder="Initial Bounty (Dero amount)" id="treasure" type="text"/>
         <p>Expiry</p>
         <input type="date" id="expiry" name="expiry"></input>
         
-        <input placeholder="Description (include precise criteria)" id="description" type="text" />
       
+        <textarea placeholder="Description (include precise criteria)" rows="44" cols="80" id="description"/>
         <input placeholder="Judge (Dero Address)" id="judge" type="text" />
-        <input placeholder="Address" id="address" type="text" />
+        
         <button type={"submit"}>Create</button>
       </form>
     </div>

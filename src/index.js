@@ -9,6 +9,7 @@ import FundList from './components/fundList'
 
 import Fundraiser from './components/fundraiser';
 import CreateFund from './components/addFundraiser'
+import BuryTreasure from './components/buryTreasure';
 
 import {LoginProvider} from './LoginContext'
 
@@ -30,6 +31,7 @@ ReactDOM.render(
       <Route path="about" element={<About />}/>
       <Route path="smokesignals" element={<FundList />} />
       <Route path="/newsignal" element={<CreateFund/>}/>
+      <Route path="/burytreasure" element={<BuryTreasure/>}/>
       <Route path="/oao" element={<OAO/>}/>
       <Route path="/ceo" element={<CEO/>}/>
      
