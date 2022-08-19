@@ -36,7 +36,7 @@ export default function FundList(){
 
 
 
-     var search= new RegExp(`.*_M`)
+     var search= new RegExp(`.*_sm`)
      console.log("search",search)
      var scData = res.data.result.stringkeys //.map(x=>x.match(search))
 
