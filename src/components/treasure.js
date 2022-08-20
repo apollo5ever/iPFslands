@@ -7,13 +7,74 @@ import sha256 from 'crypto-js/sha256'
 
 export default function Treasure() {
 
-  const [signal,setSignal] = React.useState({})
+  const [treasure,setTreasure] = React.useState({})
   const params = useParams()
   const island = params.island
   const index = params.index
   const [state, setState] = React.useContext(LoginContext);
 
-  const [raised,setRaised] = React.useState(-1)
+ 
+
+  const AddTreasure =React.useCallback(async (event) =>{
+    event.preventDefault();
+
+    const deroBridgeApi = state.deroBridgeApiRef.current
+
+    const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
+      "scid": state.scid,
+      "ringsize": 2,
+      "transfers": [
+        {
+          "destination":state.randomAddress,
+          "burn":parseInt(event.target.amount.value)*100000
+
+        }
+      ],
+      "sc_rpc": [{
+        "name": "entrypoint",
+        "datatype": "S",
+        "value": "BT"
+      },
+
+      {
+        "name": "H",
+        "datatype": "S",
+        "value": sha256(island).toString()
+      },
+      {
+        "name": "i",
+        "datatype": "U",
+        "value": parseInt(index)
+      },
+      {
+        "name": "J",
+        "datatype": "S",
+        "value": "J"
+      },
+      {
+        "name": "E",
+        "datatype": "U",
+        "value": 0
+      },
+      {
+        "name": "S",
+        "datatype": "U",
+        "value": 1
+      },
+      {
+        "name": "M",
+        "datatype": "S",
+        "value": "M"
+      },
+     
+      {
+        "name": "m",
+        "datatype" : "S",
+        "value": "m"
+      }
+      ]
+    }))
+  })
 
   function hex2a(hex) {
     var str = '';
@@ -32,7 +93,7 @@ export default function Treasure() {
     
    // res.data.result.stringkeys[sha256(island).toString()+index+"_M"]
 
-    var search= new RegExp(`${sha256(island).toString()+index}_M`)
+    var search= new RegExp(`${sha256(island).toString()+index}_bm`)
      console.log("search",search)
      var scData = res.data.result.stringkeys //.map(x=>x.match(search))
 
@@ -44,7 +105,7 @@ export default function Treasure() {
      
      for(let i = 0; i<fundList.length; i++){
     console.log("helllooo",state.ipfs)
-    console.log("funds",funds)
+    console.log("funds",treasure)
     console.log("fundList",fundList)
       for await (const buf of state.ipfs.cat(fundList[i][0].toString())){
         let fund = JSON.parse(buf.toString())
@@ -60,8 +121,8 @@ export default function Treasure() {
         
         if(fund.expiry> new Date().getTime()/1000) fund.status=0
      
-        setSignal(fund)
-        setRaised(fund.raised/100000)
+        setTreasure(fund)
+        
       }
      }
 
@@ -71,26 +132,7 @@ export default function Treasure() {
 
 
 
-  const checkRaised = React.useCallback(async () => {
-      
-      const deroBridgeApi = state.deroBridgeApiRef.current
-      const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
-          scid: state.scid,
-          code: false,
-          variables: true
-      }))
-      const obj = res.data.result.stringkeys
-     let search = sha256(params.island) +params.index+"_Raised"
-     let r = obj[search]
-     console.log("avail",r)
-      setRaised(r/100000)
-      return(r)
-      
 
-      
-      
-
-  })
 
   const withdraw = React.useCallback(async (event) =>{
     event.preventDefault()
@@ -161,49 +203,29 @@ console.log(HashAndIndex,refundable,state.scid,state.randomAddress)
 
 
 
-      var deadline = new Date(signal.deadline*1000)
-      var deadlinestring = (deadline.getMonth()+1).toString()+"/"+deadline.getDate().toString()+"/"+deadline.getUTCFullYear().toString()
+    
 
       React.useEffect(() => {
         console.log("executed only once!");
-        //checkRaised();
+        
         getFunds();
       }, [state.deroBridgeApiRef]);
     
     return (<div className="function">
         <div className="profile" >
           
-          <img src={signal.image}/>
-            <h1>{signal.name}</h1>
-            <h3>{signal.tagline}</h3>
-            <h3>Goal: {signal.goal} Dero by {deadlinestring}</h3>
-            <h3>Progress: {raised!=-1? raised:
-             <b className="availabilityCheck" onClick={()=>checkRaised()}> check</b>}/{signal.goal}</h3>
-            <h3>{signal.description}</h3>
-            {signal.status==0?<><form onSubmit={supportGoal}>
-            <input id="amount" placeholder="Dero amount to donate" type="text"/>
-            <label htmlFor='refundable'>Refundable?</label>
-            <input id="refundable" type="checkbox"/>
-            <button type={"submit"}>Support</button>
-          </form>
-          <p>If the goal has been met, owner can withdraw to fundee</p>
-          <form onSubmit={withdraw}>
-          <button type={"submit"}>Withdraw</button>
-        </form>
-          </>
-          :signal.status==1?<>
-          <p>This Smoke Signal has met its fundraiser goal! If you are the owner, you can withdraw the funds to the fundee now.</p>
-          <form onSubmit={withdraw}>
-          <button type={"submit"}>Withdraw</button>
-        </form></>
-          :signal.status==2?
-        <><p>This Smoke Signal failed to meet its goal. If you made a refundable donation, you can withdraw those funds now.</p>
-        <form onSubmit={withdraw}>
-          <button type={"submit"}>Withdraw</button>
-        </form>
-        </>:""}
+          <img src={treasure.image}/>
+            <h1>{treasure.name}</h1>
+            <h3>Treasure: {treasure.treasure} Dero</h3>
+            <h3>{treasure.tagline}</h3>
+            
+            <p dangerouslySetInnerHTML={{__html: treasure.description}} />
+            <form onSubmit={AddTreasure}>
+              <input placeholder="Amount (Dero)" id="amount"/>
+              <button type={"submit"}>Add Treasure</button>
+            </form>
 
             
         </div></div>
     )
-}
+} 
