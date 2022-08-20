@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import App from './App';
 import About from './components/about'
 import FundList from './components/fundList'
@@ -21,7 +22,7 @@ import CEO from './components/ceo'
 ReactDOM.render(
   
   <LoginProvider>
-  <BrowserRouter>
+  <HashRouter>
   <Routes className="main">
     <Route path="/" element={<App/>}>
       <Route path="/about" element={<About/>}/>
@@ -38,7 +39,7 @@ ReactDOM.render(
     </Route>
   </Routes>
   
-</BrowserRouter>
+</HashRouter>
 </LoginProvider>
 
   , document.getElementById('root'));
