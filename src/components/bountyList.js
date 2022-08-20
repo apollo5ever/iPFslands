@@ -42,7 +42,7 @@ export default function BountyList(){
 
     let fundList= Object.keys(scData)
      .filter(key => search.test(key))
-     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Expiry"],scData[key.substring(0,66)+"Treasure"],scData[key.substring(0,66)+"Judge"]])
+     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Expiry"],scData[key.substring(0,66)+"Treasure"],scData[key.substring(0,66)+"Judge"],key.substring(0,65)])
      
      console.log("hash array",fundList)
      
@@ -54,10 +54,10 @@ export default function BountyList(){
         let fund = JSON.parse(buf.toString())
         console.log(fund.island)
         console.log(sha256(fund.island).toString())
-        console.log(fundList[i][6].substring(0,64))
-       if(sha256(fund.island).toString()!=fundList[i][6].substring(0,64)) continue
+        console.log(fundList[i][4].substring(0,64))
+       if(sha256(fund.island).toString()!=fundList[i][4].substring(0,64)) continue
        
-        fund.index=fundList[i][6].substring(64,65)
+        fund.index=fundList[i][4].substring(64,65)
         fund.expiry = fundList[i][1]
         fund.treasure = fundList[i][2]/100000
         fund.judge = fundList[i][3]
