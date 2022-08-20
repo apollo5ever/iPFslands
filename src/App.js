@@ -163,6 +163,7 @@ React.useEffect(()=>{
      <div className="navbar">
      <NavLink to="smokesignals?status=0">Browse Smoke Signals</NavLink>
     <NavLink to="newsignal">Create Smoke Signal</NavLink>
+    <NavLink to="treasure?status=0">Browse Buried Treasure</NavLink>
     <NavLink to="burytreasure">Bury Treasure</NavLink>
      <NavLink to="about">About</NavLink>
      <NavLink to ="oao">OAO</NavLink>
