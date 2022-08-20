@@ -1,5 +1,5 @@
 import React from 'react'
-import FundCard from './fundCard'
+import TreasureCard from './treasureCard'
 import '../App.css'
 import {useSearchParams,NavLink} from 'react-router-dom'
 import { LoginContext } from '../LoginContext'
@@ -98,7 +98,7 @@ for await (const buf of state.ipfs.cat(cid)) {
         if(searchParams.get("status") && f.status!=searchParams.get("status")) return
         if(searchParams.get("island") && f.island!=searchParams.get("island")) return
         
-         return(<div className="function"><NavLink to={`/island/${f.island}/smokesignal/${f.index}`}><FundCard image={f.image} index={f.index} goal={f.goal} deadline={f.deadline} profile={f.island} name={f.name} tagline={f.tagline}/></NavLink></div>)
+         return(<div className="function"><NavLink to={`/island/${f.island}/treasure/${f.index}`}><TreasureCard image={f.image} index={f.index} treasure={f.treasure} deadline={f.deadline} profile={f.island} name={f.name} tagline={f.tagline}/></NavLink></div>)
         
         })
 

@@ -5,7 +5,7 @@ import to from 'await-to-js'
 import sha256 from 'crypto-js/sha256'
 
 
-export default function Fundraiser() {
+export default function Treasure() {
 
   const [signal,setSignal] = React.useState({})
   const params = useParams()
@@ -27,42 +27,39 @@ export default function Fundraiser() {
     const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
             scid:state.scid,
             variables:true,
-            keysstring:[sha256(island)+index+"_sm",sha256(island)+index+"_Goal"]
+            keysstring:[sha256(island)+index+"_bm",sha256(island)+index+"_Treasure"]
     }))
     
    // res.data.result.stringkeys[sha256(island).toString()+index+"_M"]
 
-    var search= new RegExp(`${sha256(island).toString()+index}_sm`)
+    var search= new RegExp(`${sha256(island).toString()+index}_M`)
      console.log("search",search)
      var scData = res.data.result.stringkeys //.map(x=>x.match(search))
 
-    let fundList= Object.keys(scData)
+     let fundList= Object.keys(scData)
      .filter(key => search.test(key))
-     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Deadline"],scData[key.substring(0,66)+"Goal"],scData[key.substring(0,66)+"Raised"],scData[key.substring(0,66)+"Fundee"],scData[key.substring(0,66)+"Claimed"],key.substring(0,65)])
+     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Expiry"],scData[key.substring(0,66)+"Treasure"],scData[key.substring(0,66)+"Judge"],key.substring(0,65)])
      
      console.log("hash array",fundList)
      
      for(let i = 0; i<fundList.length; i++){
     console.log("helllooo",state.ipfs)
-    console.log(await state.ipfs.id())
-   
+    console.log("funds",funds)
     console.log("fundList",fundList)
       for await (const buf of state.ipfs.cat(fundList[i][0].toString())){
         let fund = JSON.parse(buf.toString())
         console.log(fund.island)
         console.log(sha256(fund.island).toString())
-        console.log(fundList[i][6].substring(0,64))
-       if(sha256(fund.island).toString()!=fundList[i][6].substring(0,64)) continue
+        console.log(fundList[i][4].substring(0,64))
+       if(sha256(fund.island).toString()!=fundList[i][4].substring(0,64)) continue
        
-        fund.index=fundList[i][6].substring(64,65)
-        fund.deadline = fundList[i][1]
-        fund.goal = fundList[i][2]/100000
-        fund.raised = fundList[i][3]
-        fund.fundee = fundList[i][4]
-        fund.claimed = fundList[i][5]
-        if(fund.deadline> new Date().getTime()/1000) fund.status=0
-        else if(fund.deadline< new Date().getTime()/1000 && fund.goal< fund.raised) fund.status = 1
-        else if(fund.deadline<new Date().getTime()/1000 && fund.goal > fund.raised) fund.status = 2
+        fund.index=fundList[i][4].substring(64,65)
+        fund.expiry = fundList[i][1]
+        fund.treasure = fundList[i][2]/100000
+        fund.judge = fundList[i][3]
+        
+        if(fund.expiry> new Date().getTime()/1000) fund.status=0
+     
         setSignal(fund)
         setRaised(fund.raised/100000)
       }
@@ -105,15 +102,15 @@ export default function Fundraiser() {
       "sc_rpc": [{
           "name": "entrypoint",
           "datatype": "S",
-          "value": "WFF"
+          "value": "WithdrawFromFundraiser"
       },
       {
-          "name": "H",
+          "name": "Hash",
           "datatype": "S",
           "value": hash
       },
       {
-        "name":"i",
+        "name":"Index",
         "datatype": "U",
         "value" : parseInt(params.index)
       }

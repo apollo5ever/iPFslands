@@ -17,6 +17,7 @@ import {LoginProvider} from './LoginContext'
 import OAO from './components/oao'
 import CEO from './components/ceo'
 import BountyList from './components/bountyList';
+import Treasure from './components/treasure';
 
 
 
@@ -29,7 +30,7 @@ ReactDOM.render(
       <Route path="/about" element={<About/>}/>
      
       <Route path="/island/:island/smokesignal/:index" element={<Fundraiser/>}/>
-     
+      <Route path="/island/:island/treasure/:index" element={<Treasure/>}/>
       <Route path="about" element={<About />}/>
       <Route path="smokesignals" element={<FundList />} />
       <Route path="treasure" element={<BountyList/>}/>
