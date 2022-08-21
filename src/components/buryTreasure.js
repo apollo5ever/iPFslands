@@ -91,7 +91,7 @@ export default function BuryTreasure() {
           "burn": burn
         },{
           "destination":state.randomAddress,
-          "burn":parseInt(event.target.treasure.value)*100000
+          "burn":parseInt(event.target.treasure.value*100000)
 
         }
       ],

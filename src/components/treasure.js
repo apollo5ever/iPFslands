@@ -134,29 +134,35 @@ export default function Treasure() {
 
 
 
-  const withdraw = React.useCallback(async (event) =>{
+  const ClaimTreasure = React.useCallback(async (event) =>{
     event.preventDefault()
+    console.log(treasure.judge)
     var hash = sha256(params.island).toString()
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
-      "scid": state.scid,
-      "ringsize": 2,
-      "sc_rpc": [{
-          "name": "entrypoint",
-          "datatype": "S",
-          "value": "WithdrawFromFundraiser"
-      },
-      {
-          "name": "Hash",
-          "datatype": "S",
-          "value": hash
-      },
-      {
-        "name":"Index",
-        "datatype": "U",
-        "value" : parseInt(params.index)
-      }
-  ]
+
+       "ringsize": 16,
+      "transfers":[
+        {"destination":hex2a(treasure.judge),
+      
+"payload_rpc":[
+        {
+                "name": "C",
+                "datatype": "S",
+                "value": "Treasure Claim Submitted by: " +state.userAddress
+        },
+        {
+          "name":"POC",
+          "datatype":"S",
+          "value":event.target.proof.value
+        }
+]
+        }
+      ],
+      
+      
+     
+   
   }))
 
   })
@@ -223,7 +229,13 @@ console.log(HashAndIndex,refundable,state.scid,state.randomAddress)
             <form onSubmit={AddTreasure}>
               <input placeholder="Amount (Dero)" id="amount"/>
               <button type={"submit"}>Add Treasure</button>
+              
             </form>
+            <form onSubmit={ClaimTreasure}>
+              <button type={"submit"}>Claim Treasure</button>
+              <input placeholder="proof" id="proof"/>
+            </form>
+            
 
             
         </div></div>
