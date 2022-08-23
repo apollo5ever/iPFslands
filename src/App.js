@@ -22,17 +22,13 @@ function App() {
   const [bridgeInitText, setBridgeInitText] = React.useState(<a href="https://chrome.google.com/webstore/detail/dero-rpc-bridge/nmofcfcaegdplgbjnadipebgfbodplpd" target="_blank" rel="noopener noreferrer">Not connected to extension. Download here.</a>)
   const [cocoBalance,setCocoBalance] = React.useState(0)
 
-  const testJ = {
-    "island":"BASED Spidey",
-    "name":"Let's make spidey BASED",
-    "tagline":"no one can stop what's coming",
-    "description":"We can do it gang!",
-    "index":0,
-    "image":"https://banner2.kisspng.com/20180407/hbq/kisspng-spider-man-film-series-youtube-wikia-fat-man-5ac871ad179951.1235187215230857410967.jpg"
-  }
   
   const getSCID = React.useCallback(async () => {
       console.log("GETSCID")
+
+    
+
+
     const deroBridgeApi = deroBridgeApiRef.current
     const [err,res] = await to(deroBridgeApi.daemon('get-sc',{
       "scid": "0000000000000000000000000000000000000000000000000000000000000001",
@@ -45,15 +41,23 @@ function App() {
     }))
     let scid = res2.data.result.valuesstring[0]
     setState(state=>({...state,scid:scid}))
+    //const ipfsboy = await IPFS.create()
     const ipfsboy = await IPFS.create()
+   
+    const validIp4 = '/ip4/64.225.105.42/tcp/4001/p2p/QmPo1ygpngghu5it8u4Mr3ym6SEU2Wp2wA66Z91Y1S1g29'
+
+    const rez = await ipfsboy.bootstrap.add(validIp4)
+    console.log(rez.Peers)
     console.log("id",await ipfsboy.id())
+    const config = await ipfsboy.config.getAll()
+console.log(config)
     //console.log(ipfsboy)
     setState(state=>({...state,ipfs:ipfsboy}))
 
    
   })
  
-  const meta= async()=>{
+ /* const meta= async()=>{
     console.log("meta")
     const node = await IPFS.create({repo: 'ok'+ Math.random()})
     const {cid} = await node.add(JSON.stringify(testJ).toString())
@@ -64,8 +68,9 @@ function App() {
     console.log(v)
     const { cid } = await state.ipfs.add(JSON.stringify(testJ).toString())
 console.info(cid.toString())
-*/
+
   }
+  */
 
   const stop= async()=>{
     console.log("stop")

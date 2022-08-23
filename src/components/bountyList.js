@@ -50,7 +50,9 @@ export default function BountyList(){
     console.log("helllooo",state.ipfs)
     console.log("funds",funds)
     console.log("fundList",fundList)
+    
       for await (const buf of state.ipfs.cat(fundList[i][0].toString())){
+        try{
         let fund = JSON.parse(buf.toString())
         console.log(fund.island)
         console.log(sha256(fund.island).toString())
@@ -66,7 +68,10 @@ export default function BountyList(){
        
         setFunds(funds=>[...funds,fund])
         console.log("fundz",funds)
-      }
+      
+    } catch(error){
+      console.log(error)
+    }
      }
      //const meta = state.ipfs.get(subList[0].toString())
     // console.log("meta",meta)
@@ -86,7 +91,7 @@ for await (const buf of state.ipfs.cat(cid)) {
     
   
      
-   }) 
+}}) 
 
    React.useEffect(()=>{
     getFunds();
