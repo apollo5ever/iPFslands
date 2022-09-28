@@ -42,7 +42,7 @@ export default function FundList(){
 
     let fundList= Object.keys(scData)
      .filter(key => search.test(key))
-     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Deadline"],scData[key.substring(0,66)+"Goal"],scData[key.substring(0,66)+"Raised"],scData[key.substring(0,66)+"Fundee"],scData[key.substring(0,66)+"Claimed"],key.substring(0,65)])
+     .map(key=>[hex2a(scData[key]),scData[key.substring(0,key.length-2)+"D"],scData[key.substring(0,key.length-2)+"G"],scData[key.substring(0,key.length-2)+"R"],scData[key.substring(0,key.length-2)+"F"],scData[key.substring(0,key.length-2)+"C"],key.substring(0,key.length-3)])
      
      console.log("hash array",fundList)
      
@@ -52,12 +52,12 @@ export default function FundList(){
     console.log("fundList",fundList)
       for await (const buf of state.ipfs.cat(fundList[i][0].toString())){
         let fund = JSON.parse(buf.toString())
-        console.log(fund.island)
-        console.log(sha256(fund.island).toString())
-        console.log(fundList[i][6].substring(0,64))
-       if(sha256(fund.island).toString()!=fundList[i][6].substring(0,64)) continue
-       
-        fund.index=fundList[i][6].substring(64,65)
+        console.log("fund.island",fund.island)
+        
+        console.log(fundList[i][6].substring(0,fundList[i][6].length-1))
+       //if(fund.island!=fundList[i][6].substring(0,fundList[i][6].length-1)) continue
+        fund.island= fundList[i][6].substring(0,fundList[i][6].length-1)
+        fund.index=fundList[i][6].substring(fundList[i][6].length-1)
         fund.deadline = fundList[i][1]
         fund.goal = fundList[i][2]/100000
         fund.raised = fundList[i][3]
@@ -113,14 +113,14 @@ for await (const buf of state.ipfs.cat(cid)) {
 
       return(
          <div> 
-            <div className="function">
+            <div>
                 
-            <h1>Smoke Signals</h1>
+            <h1>Smoke Signal Fundraisers</h1>
             <div className="status-selector">
             <ul>
-                <li className="status-selector-option" onClick={()=>setSearchParams({"status":0})}>Active</li>
-                <li onClick={()=>setSearchParams({"status":1})}>Successes</li>
-                <li onClick={()=>setSearchParams({"status":2})}>Failures</li>
+                <li className="status-selector-option" onClick={()=>setSearchParams({"filter":"smokesignals","status":0})}>Active</li>
+                <li onClick={()=>setSearchParams({"filter":"smokesignals","status":1})}>Successes</li>
+                <li onClick={()=>setSearchParams({"filter":"smokesignals","status":2})}>Failures</li>
             </ul>
             </div>
             {fundJSX}

@@ -15,11 +15,9 @@
 body {
   background: rgb(83, 99, 243);
  
-  background-size: 100vw 100vw;
+  background-size: 100vw 70vw;
   background-attachment: fixed;
-  /*
-  background-image: url("https://i.redd.it/8ahblr4vh2pz.jpg");
-  */
+  background-image:url('./images/DeroIslandsLogo3.png');
   text-align:center;
   
   
@@ -53,6 +51,53 @@ body {
 
 }
 
+.card-grid {
+  
+  
+  
+ 
+  
+  margin-left: auto;
+  margin-right: auto;
+  padding: 10px;
+ border-width: 1px;
+ border-style:inset;
+
+ max-width:60vw;
+ 
+ 
+ min-width:40vw;
+ height:auto;
+ overflow:visible;
+ 
+ align-items:center;
+ justify-content:center;
+ display:flex;
+ flex-flow: wrap;
+ 
+ 
+ position:relative;
+ 
+}
+
+.card-card{
+  display:flex;
+  flex-direction:column;
+}
+
+input[type="checkbox"]
+{
+    vertical-align:middle;
+}
+.tierList {
+  display:flex;
+  flex-direction: row;
+  
+  
+}
+ul{
+  list-style:none;
+}
 
 .function {
   
@@ -78,11 +123,6 @@ body {
  flex-direction: column;
  
  position:relative;
- 
- 
- 
-
- 
  
 }
 
@@ -168,9 +208,9 @@ footer {
 .ProfileCard {
   border-style:dashed;
   cursor:pointer;
-  padding:5px;
-  margin:10px;
+  
   border-color: rgba(7, 145, 80, 0.65);
+  width:auto;
 }
 
 .profile img{
@@ -179,6 +219,75 @@ footer {
   border-radius:50%;
   
   
+}
+
+.icons {
+  align-items:center;
+  justify-content:center;
+  display: flex;
+  flex-direction: row;
+  
+  position:relative;
+}
+
+.icons img {
+  width:5vw;
+  height: 5vw;
+}
+.icons-treasure,.icons-mail,.icons-signal:hover{
+  cursor: pointer;
+}
+
+.mytreasure {
+  overflow-x:auto;
+}
+
+
+.icons-treasure{
+  background-image:url('./images/DeroIslands-Treasure_Chest1.png');
+  
+ background-position:center;
+  background-size: 8vw 8vw;
+  margin:2vw;
+  margin-top:0;
+  margin-bottom:0;
+  padding:1vw;
+  width:8vw;
+  height:8vw;
+  box-sizing:border-box;
+  display:flex;
+}
+
+.icons-signal{
+  background-image:url('./images/DeroIslands-Smoke_Signals1.png');
+ background-position:center;
+  background-size: 8vw 8vw;
+  margin:2vw;
+  margin-top:0;
+  margin-bottom:0;
+  padding:1vw;
+  width:8vw;
+  height:8vw;
+  box-sizing:border-box;
+  display:flex;
+}
+.icons-mail{
+  background-image:url('./images/DeroIslandsLogo3.png');
+ background-position:center;
+  background-size: 8vw 8vw;
+  margin:2vw;
+  margin-top:0; 
+  margin-bottom:0;
+  padding:1vw;
+  width:8vw;
+  height:8vw;
+  box-sizing:border-box;
+  display:flex;
+  }
+.icons-text{
+  margin-left:auto;
+  margin-right:auto;
+  align-self:flex-end;
 }
 
 .post img{
@@ -195,7 +304,7 @@ footer {
 
 .ProfileCard img{
   width:120px;
-  height: 180px;
+  height: auto;
   border-radius:50%;
   
 }
@@ -251,7 +360,7 @@ flex-direction:row;
   flex-direction:row;
 }
 
-.profile small:hover{
+ small:hover{
 cursor:pointer;
 }
 

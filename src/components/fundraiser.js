@@ -27,18 +27,18 @@ export default function Fundraiser() {
     const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
             scid:state.scid,
             variables:true,
-            keysstring:[sha256(island)+index+"_sm",sha256(island)+index+"_Goal"]
+            keysstring:[island+index+"_sm",island+index+"_G"]
     }))
     
    // res.data.result.stringkeys[sha256(island).toString()+index+"_M"]
 
-    var search= new RegExp(`${sha256(island).toString()+index}_sm`)
+    var search= new RegExp(`${island+index}_sm`)
      console.log("search",search)
      var scData = res.data.result.stringkeys //.map(x=>x.match(search))
 
     let fundList= Object.keys(scData)
      .filter(key => search.test(key))
-     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Deadline"],scData[key.substring(0,66)+"Goal"],scData[key.substring(0,66)+"Raised"],scData[key.substring(0,66)+"Fundee"],scData[key.substring(0,66)+"Claimed"],key.substring(0,65)])
+     .map(key=>[hex2a(scData[key]),scData[key.substring(0,key.length-2)+"D"],scData[key.substring(0,key.length-2)+"G"],scData[key.substring(0,key.length-2)+"R"],hex2a(scData[key.substring(0,key.length-2)+"F"]),scData[key.substring(0,key.length-2)+"C"],key.substring(0,key.length-3)])
      
      console.log("hash array",fundList)
      
@@ -52,9 +52,9 @@ export default function Fundraiser() {
         console.log(fund.island)
         console.log(sha256(fund.island).toString())
         console.log(fundList[i][6].substring(0,64))
-       if(sha256(fund.island).toString()!=fundList[i][6].substring(0,64)) continue
        
-        fund.index=fundList[i][6].substring(64,65)
+       
+        fund.index=fundList[i][6].substring(fundList[i][6]-1)
         fund.deadline = fundList[i][1]
         fund.goal = fundList[i][2]/100000
         fund.raised = fundList[i][3]
@@ -97,7 +97,7 @@ export default function Fundraiser() {
 
   const withdraw = React.useCallback(async (event) =>{
     event.preventDefault()
-    var hash = sha256(params.island).toString()
+    var hash = params.island
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
       "scid": state.scid,
@@ -125,7 +125,7 @@ export default function Fundraiser() {
   
   const supportGoal = React.useCallback(async (event) => {
     event.preventDefault()
-    var HashAndIndex = sha256(params.island)+params.index
+    var HashAndIndex = params.island+params.index
     if(event.target.refundable.checked){
       var refundable =1
     }else {
@@ -171,15 +171,16 @@ console.log(HashAndIndex,refundable,state.scid,state.randomAddress)
         console.log("executed only once!");
         //checkRaised();
         getFunds();
-      }, [state.deroBridgeApiRef]);
+      }, [state.ipfs]);
     
     return (<div className="function">
         <div className="profile" >
           
-          <img src={signal.image}/>
+     {  signal.image?<>   <img src={signal.image}/>
             <h1>{signal.name}</h1>
             <h3>{signal.tagline}</h3>
             <h3>Goal: {signal.goal} Dero by {deadlinestring}</h3>
+            <h3>Funds will go to: {signal.fundee}</h3>
             <h3>Progress: {raised!=-1? raised:
              <b className="availabilityCheck" onClick={()=>checkRaised()}> check</b>}/{signal.goal}</h3>
             <h3>{signal.description}</h3>
@@ -189,10 +190,10 @@ console.log(HashAndIndex,refundable,state.scid,state.randomAddress)
             <input id="refundable" type="checkbox"/>
             <button type={"submit"}>Support</button>
           </form>
-          <p>If the goal has been met, owner can withdraw to fundee</p>
+          {raised>=signal.goal?
           <form onSubmit={withdraw}>
           <button type={"submit"}>Withdraw</button>
-        </form>
+        </form>:""}
           </>
           :signal.status==1?<>
           <p>This Smoke Signal has met its fundraiser goal! If you are the owner, you can withdraw the funds to the fundee now.</p>
@@ -205,7 +206,7 @@ console.log(HashAndIndex,refundable,state.scid,state.randomAddress)
           <button type={"submit"}>Withdraw</button>
         </form>
         </>:""}
-
+</>:<p>Loading...</p>}
             
         </div></div>
     )

@@ -4,8 +4,12 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import to from 'await-to-js'
 import sha256 from 'crypto-js/sha256'
+import { useParams,useSearchParams } from 'react-router-dom'
 
 import { LoginContext } from '../LoginContext';
+import Success from './success.js'
+import hex2a from './hex2a.js'
+
 
 
 export default function BuryTreasure() {
@@ -16,13 +20,62 @@ export default function BuryTreasure() {
 
 
 
+const params=useParams()
+const [searchParams,setSearchParams] = useSearchParams()
+ const island =params.island
+ const index = params.index
+ const [judges,setJudges]=React.useState([])
+ const [execs,setExecs] = React.useState([])
+ const [error,setError] = React.useState("")
 
- 
+ const getJudges = React.useCallback(async () =>{
+  const deroBridgeApi = state.deroBridgeApiRef.current
+    const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
+            scid:state.scid,
+            code:false,
+            variables:true
+    }))
+
+    var search= new RegExp(`.*_j`)  
+   
+    var scData = res.data.result.stringkeys //.map(x=>x.match(search))
+  
+  
+  const judgeList=Object.keys(scData)
+    .filter(key => search.test(key))
+    .filter(key=>scData[key]==1||scData[key]==3)
+    .map(key=><option value={key.substring(0,key.length-2)}>{key.substring(0,key.length-2)}</option>)
+    
+  setJudges(judgeList)
+    
+  const execList=Object.keys(scData)
+  .filter(key => search.test(key))
+  .filter(key=>scData[key]==2||scData[key]==3)
+  .map(key=><option value={key.substring(0,key.length-2)}>{key.substring(0,key.length-2)}</option>)
+  
+setExecs(execList)
+
+})
+
+
+React.useEffect(() => {
+  getJudges()
+    
+  },[state])
 
 
 
   const DoIt = React.useCallback(async (event) => {
     event.preventDefault();
+    if(!event.target.bountyName.value){
+      setError("Bounty name is required.")
+      return
+    }
+    if(!event.target.expiry.value){
+      setError("Expiry is required.")
+      return
+    }
+
 
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err0, res0] = await to(deroBridgeApi.daemon('get-sc', {
@@ -30,41 +83,36 @@ export default function BuryTreasure() {
             code:false,
             variables:true
     }))
+    var executer = event.target.executer.value
   
+    if(executer=="self")executer=event.target.island.value
+
+    var judge = event.target.judge.value
+    if(judge=="self")judge=event.target.island.value
+    
+
+
+
  
+
     
-
-
-
-    var search= sha256(event.target.island.value).toString()+"_Owner"
-    console.log("search",search)
-    var owner = res0.data.result.stringkeys[search]
-    console.log(owner)
-
-    var index = 0
-    var burn = 100000
-    if(!owner){
-       burn = 1000000
-       
-    }else{
-      var search2= new RegExp(`${sha256(event.target.island.value).toString()}.*_Treasure`)
-      console.log(search2)
-      let bountyList = Object.keys(res0.data.result.stringkeys)
-      .filter(key => search2.test(key))
-      console.log(bountyList)
-      index = bountyList.length
-    }
-    var expiry = new Date(event.target.expiry.value).getTime()/1000
+    var burn = 100
     
+    var expiry = new Date(event.target.expiry.value).getTime()/1000 + new Date().getTimezoneOffset()*60
+    if(expiry<new Date().getTime()/1000){
+      setError("Expiry must be future date")
+      return
+    } 
 
     var obj = {
-      "name": event.target.fundName.value,
+      "name": event.target.bountyName.value,
       "expiry": expiry,
       "tagline": event.target.tagline.value,
       "index": index,
       "description": event.target.description.value,
-      "image":event.target.fundPhoto.value,
-      "island":event.target.island.value
+      "image":event.target.bountyPhoto.value,
+      "island":island,
+    
       
 
     }
@@ -74,7 +122,7 @@ export default function BuryTreasure() {
         "cidVersion": 0
       },
       "pinataMetadata": {
-        "name": event.target.island.value+" buried treasure "+event.target.index.value+" "+event.target.name.value,
+        "name": island+" buried treasure "+index+" "+event.target.bountyName.value,
         "keyvalues": {
         }
       },
@@ -97,26 +145,35 @@ export default function BuryTreasure() {
     const metadata =addObj.cid.toString()
     console.log(addObj)
     console.log(metadata)
+
+    var transfers = []
+    if(state.cocoBalance<burn){
+      transfers.push({
+        "destination":state.randomAddress,
+        "burn":parseInt(event.target.treasure.value*100000+10000)
+
+      })
+    }else{
+      transfers.push( {
+        "scid": state.coco,
+        "burn": burn
+      },{
+        "destination":state.randomAddress,
+        "burn":parseInt(event.target.treasure.value*100000)
+
+      })
+    }
     
 
 
 
    
-  
+    let j=parseInt(state.myIslands.filter(x=>x.name=island)[0].j)
   
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
       "scid": state.scid,
       "ringsize": 2,
-      "transfers": [
-        {
-          "scid": state.scid,
-          "burn": burn
-        },{
-          "destination":state.randomAddress,
-          "burn":parseInt(event.target.treasure.value*100000)
-
-        }
-      ],
+      "transfers": transfers,
       "sc_rpc": [{
         "name": "entrypoint",
         "datatype": "S",
@@ -126,12 +183,12 @@ export default function BuryTreasure() {
       {
         "name": "H",
         "datatype": "S",
-        "value": sha256(event.target.island.value).toString()
+        "value": island
       },
       {
         "name": "i",
         "datatype": "U",
-        "value": index
+        "value": parseInt(index)
       },
       {
         "name": "J",
@@ -139,14 +196,14 @@ export default function BuryTreasure() {
         "value": event.target.judge.value
       },
       {
+        "name":"X",
+        "datatype":"S",
+        "value":event.target.executer.value
+      },
+      {
         "name": "E",
         "datatype": "U",
         "value": expiry
-      },
-      {
-        "name": "S",
-        "datatype": "U",
-        "value": 1
       },
       {
         "name": "M",
@@ -158,6 +215,11 @@ export default function BuryTreasure() {
         "name": "m",
         "datatype" : "S",
         "value": metadata
+      },
+      {
+        "name":"j",
+        "datatype":"U",
+        "value":j
       }
       ]
     }))
@@ -166,11 +228,41 @@ export default function BuryTreasure() {
     console.log(err)
     console.log(res)
 
+
+    const judgeAddress=hex2a(res0.data.result.stringkeys[`${event.target.judge.value}_O`])
+    const executerAddress=hex2a(res0.data.result.stringkeys[`${event.target.executer.value}_O`])
+    const [err3,res3] =await to(deroBridgeApi.wallet('start-transfer',{
+      "ringsize":2,
+      "transfers":[
+      {"destination":judgeAddress,
+      "amount":1,
+          
+      "payload_rpc":[
+              {
+                      "name": "C",
+                      "datatype": "S",
+                      "value": "You have been nominated for bounty judge by: " +island
+              }]
+              },
+              
+                {"destination":executerAddress,
+                "amount":1,
+                    
+                "payload_rpc":[
+                        {
+                                "name": "C",
+                                "datatype": "S",
+                                "value": "You have been nominated for bounty executer by: " +island
+                        }]
+                        }]
+
+    }))
+
    
 
 
 
-  
+  setSearchParams({"status":"success"})
 
   })
 
@@ -178,29 +270,31 @@ export default function BuryTreasure() {
 
   return (
     <div className="function">
-      <div className="profile">
+{ searchParams.get("status")=="success"?<Success/>
+:     <div className="profile">
       
       <h3>Bury Treasure</h3>
       <p>When you bury treasure on your private island, you are creating a bounty for some specific goal. Specify the criteria for release of treasure, and appoint a judge (it can be you) to decide when that criteria has been met.</p>
-      <p>If you already own an island, adding a Buried Treasure Bounty costs 1 Coco. Please ensure island name matches exactly, or it will be considered fraudulent and won't be displayed. If you don't already have an island, this will create one for you and it will cost you 10 Coco.</p>
+      <p>This will cost 100 coco. If you don't have enough coco you will be charged 0.1 Dero instead,</p>
       
       <form onSubmit={DoIt}>
-        <input placeholder="Island (case-sensitive)" id="island" type="text" />
-        
-        <input placeholder="Name" id="fundName" type="text" />
-        <input placeholder="Image URL" id="fundPhoto" type="text"/>
-        <input placeholder="Tagline" id="tagline" type="text" />
-        <input placeholder="Initial Bounty (Dero amount)" id="treasure" type="text"/>
-        <p>Expiry</p>
+      <input placeholder="Buried Treasure Name" id="bountyName"/>
+        <input placeholder="Image URL" id="bountyPhoto"/>
+        <input placeholder="Tagline" id="tagline"/>
+        <p>Expiry (if the task isn't complete before this date, supporters can retrieve their funds)</p>
         <input type="date" id="expiry" name="expiry"></input>
         
-      
-        <textarea placeholder="Description (include precise criteria)" rows="44" cols="80" id="description"/>
-        <input placeholder="Judge (Dero Address)" id="judge" type="text" />
+        <textarea placeholder="Description" rows="44" cols="80" id="description"/>
+        <input placeholder="Initial Treasure (Dero Amount)" id="treasure" type="text" />
+        <p>Nominate a Judge. This person sorts through treasure claims and chooses who is entitled to the funds. The judge is paid 10% of the treasure for this work. Backup judges can be nominated later.</p>
+        <select id="judge">{judges}</select>
+        <p>Nominate an Executer. This person releases the treasure according to the judge's judgement, or he may veto the decision if he believes it to be in error. He is not paid. Backup executers can be nominated later.</p>
+        <select id="executer">{execs}</select>
         
         <button type={"submit"}>Create</button>
       </form>
-    </div>
+      {error}
+    </div>}
     </div>
   )
 }

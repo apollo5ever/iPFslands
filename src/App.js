@@ -8,6 +8,7 @@ import {LoginContext} from './LoginContext'
 
 
 import to from 'await-to-js'
+import SelectIsland from './components/selectIsland';
 
 
 
@@ -22,13 +23,27 @@ function App() {
   const [bridgeInitText, setBridgeInitText] = React.useState(<a href="https://chrome.google.com/webstore/detail/dero-rpc-bridge/nmofcfcaegdplgbjnadipebgfbodplpd" target="_blank" rel="noopener noreferrer">Not connected to extension. Download here.</a>)
   const [cocoBalance,setCocoBalance] = React.useState(0)
 
+  const logstate=() =>{
+    console.log("state",state)
+  }
+
+  function hex2a(hex) {
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+}
+
+  const getSCID2 = async ()=>{
+    setState(state=>({...state,scid:"99a8c70cfae03541a4c0e85854c23a83f0aa78727a1f921d55960cc90c9df1b5",coco:"bf80416cdb679ea49a2f27efe23b6d77eb70ece51e07fcaf3bce1a11413cec99"}))
+    const ipfsboy = await IPFS.create()
+       const validIp4 = '/ip4/64.225.105.42/tcp/4001/p2p/QmPo1ygpngghu5it8u4Mr3ym6SEU2Wp2wA66Z91Y1S1g29'
+    const rez = await ipfsboy.bootstrap.add(validIp4)
+    const config = await ipfsboy.config.getAll()
+    setState(state=>({...state,ipfs:ipfsboy}))
+      }
   
   const getSCID = React.useCallback(async () => {
-      console.log("GETSCID")
-
-    
-
-
+      
     const deroBridgeApi = deroBridgeApiRef.current
     const [err,res] = await to(deroBridgeApi.daemon('get-sc',{
       "scid": "0000000000000000000000000000000000000000000000000000000000000001",
@@ -37,26 +52,61 @@ function App() {
     let keystore_scid= "80"+res.data.result.valuesstring[0].substring(2,64)
     const [err2,res2] = await to(deroBridgeApi.daemon('get-sc',{
       "scid": keystore_scid,
-      "keysstring":["k:private.islands.scid"]
+      "keysstring":["k:private.islands.scid","k:private.islands.coco"]
     }))
     let scid = res2.data.result.valuesstring[0]
-    setState(state=>({...state,scid:scid}))
-    //const ipfsboy = await IPFS.create()
+    let coco = res2.data.result.valuesstring[1]
+    setState(state=>({...state,scid:scid,coco:coco}))
+  
     const ipfsboy = await IPFS.create()
    
     const validIp4 = '/ip4/64.225.105.42/tcp/4001/p2p/QmPo1ygpngghu5it8u4Mr3ym6SEU2Wp2wA66Z91Y1S1g29'
 
     const rez = await ipfsboy.bootstrap.add(validIp4)
     console.log(rez.Peers)
-    console.log("id",await ipfsboy.id())
     const config = await ipfsboy.config.getAll()
-console.log(config)
-    //console.log(ipfsboy)
     setState(state=>({...state,ipfs:ipfsboy}))
-
-   
   })
  
+  const getIslands = React.useCallback(async () => {
+    console.log("GET ISLANDS")
+    const deroBridgeApi = state.deroBridgeApiRef.current
+
+
+  const [err,res] = await to(deroBridgeApi.daemon('get-sc',{
+    "scid": state.scid,
+    "variables":true
+  }))
+  
+
+  var search= new RegExp(`.*_O`)  
+  console.log("search",search)
+  var scData = res.data.result.stringkeys //.map(x=>x.match(search))
+console.log(scData)
+var myIslands=[]
+
+const myList=Object.keys(scData)
+  .filter(key => search.test(key))
+  .filter(key=>hex2a(scData[key])==state.userAddress)
+  .map(key=>new Object({name:key.substring(0,key.length-2),meta:hex2a(scData[`${key.substring(0,key.length-2)}_M`]),j:scData[`${key.substring(0,key.length-2)}_j`]}))
+   console.log("MY LIST",myList)
+  for(var i=0; i<myList.length;i++){
+    let k = myList[i].meta
+    let j=myList[i].j
+     for await (const buf of state.ipfs.cat(k)){
+      let m = await JSON.parse(buf.toString())
+      m.j=j
+    myIslands.push(m)
+    
+  }
+}
+
+
+ 
+  setState(state=>({...state,myIslands:myIslands,active:0}))
+
+  
+})
  /* const meta= async()=>{
     console.log("meta")
     const node = await IPFS.create({repo: 'ok'+ Math.random()})
@@ -83,7 +133,9 @@ console.info(cid.toString())
 
   
 
-
+React.useEffect(()=>{
+  getIslands();
+},[state.deroBridgeApiRef,state.ipfs,state.userAddress])
 
 
 
@@ -97,9 +149,10 @@ console.info(cid.toString())
       } else {
         setBridgeInitText('rpc-bridge connected')
         setState(state=>({...state,deroBridgeApiRef:deroBridgeApiRef}))
-        getSCID();
         getAddress();
+        getSCID();
         getRandom();
+        
         
       }
     }
@@ -148,40 +201,50 @@ console.info(cid.toString())
       
       const deroBridgeApi = deroBridgeApiRef.current
       const [err,res] = await to(deroBridgeApi.wallet('get-balance',{
-        "scid": state.scid
+        "scid": state.coco
       }))
       console.log("balance:", res.data.result.balance)
-      setCocoBalance(res.data.result.balance)
+      setState(state=>({...state,cocoBalance:res.data.result.balance}))
     })
 
 React.useEffect(()=>{
   getCocoBalance();
-},[state.scid])
+},[state.scid,state.userAddress])
 
 
   return (
     
     <div className="App">
       
-     
+    
     
      <div className="navbar">
-     <NavLink to="smokesignals?status=0">Browse Smoke Signals</NavLink>
-    <NavLink to="newsignal">Create Smoke Signal</NavLink>
-    <NavLink to="treasure?status=0">Browse Buried Treasure</NavLink>
-    <NavLink to="burytreasure">Bury Treasure</NavLink>
+     <NavLink to="archipelago">Explore Archipelago</NavLink>
+    <NavLink to="claimisland">Claim Your Private Island</NavLink>
+    <NavLink to="myisland">My Island</NavLink>
      <NavLink to="about">About</NavLink>
      <NavLink to ="oao">OAO</NavLink>
-     
+      
+      
      </div>
+    
  
       <div className="rpc-bridge-data">
-    {bridgeInitText}
-      <h3>Coco Balance: {cocoBalance/100000}</h3>
+    
+      
+      
 </div>
 
 
      <Outlet />
+     <h3>Coco Balance: {state.cocoBalance}</h3>
+     <SelectIsland/>
+{bridgeInitText}
+<small onClick={()=>{
+  getAddress()
+  
+}}>Refresh Wallet</small>
+
     </div>
     
   );

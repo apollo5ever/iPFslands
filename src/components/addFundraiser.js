@@ -3,10 +3,12 @@ import DeroBridgeApi from '../api.js'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import to from 'await-to-js'
-import sha256 from 'crypto-js/sha256'
+import { useParams,useSearchParams } from 'react-router-dom'
+
 
 
 import { LoginContext } from '../LoginContext';
+import Success from './success.js'
 
 
 export default function CreateFund() {
@@ -14,8 +16,11 @@ export default function CreateFund() {
     
     
     const [state, setState] = React.useContext(LoginContext);
+    const [searchParams,setSearchParams] = useSearchParams()
 
-
+    const params=useParams()
+const island=params.island
+const index = params.index
 
 
  
@@ -39,25 +44,11 @@ export default function CreateFund() {
  
  
  
-      var search= sha256(event.target.island.value).toString()+"_Owner"
-      console.log("search",search)
-      var owner = res0.data.result.stringkeys[search]
-      console.log(owner)
+   
 
-
-    var index = 0
-    var burn = 100000
-    if(!owner){
-       burn = 1000000
-       
-    }else{
-      var search2= new RegExp(`${sha256(event.target.island.value).toString()}.*_sm`)
-      console.log(search2)
-      let fundList = Object.keys(res0.data.result.stringkeys)
-      .filter(key => search2.test(key))
-      console.log(fundList)
-      index = fundList.length
-    }
+    
+    var burn = 100
+    
     var deadline = new Date(event.target.deadline.value).getTime()/1000
     console.log("DATE",deadline)
 
@@ -69,7 +60,7 @@ export default function CreateFund() {
       "index": index,
       "description": event.target.description.value,
       "image":event.target.fundPhoto.value,
-      "island":event.target.island.value
+      "island":island
       
 
     }
@@ -82,7 +73,7 @@ export default function CreateFund() {
         "cidVersion": 0
       },
       "pinataMetadata": {
-        "name": event.target.island.value+" smoke signal "+event.target.index.value+" "+event.target.name.value,
+        "name": island+" smoke signal "+index+" "+event.target.fundName.value,
         "keyvalues": {
         }
       },
@@ -109,10 +100,25 @@ export default function CreateFund() {
      const metadata =addObj.cid.toString()
      console.log(addObj)
      console.log(metadata)
+
+     let j=state.myIslands.filter(x=>x.name=island)[0].j
  
     
 
-
+     var transfers = []
+     if(state.cocoBalance<burn){
+       transfers.push({
+         "destination":state.randomAddress,
+         "burn":burn*100
+ 
+       })
+     }else{
+       transfers.push( {
+        "destination":state.randomAddress,
+         "scid": state.coco,
+         "burn": burn
+       })
+     }
 
    
   
@@ -120,12 +126,7 @@ export default function CreateFund() {
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
       "scid": state.scid,
       "ringsize": 2,
-      "transfers": [
-        {
-          "scid": state.scid,
-          "burn": burn
-        }
-      ],
+      "transfers": transfers,
       "sc_rpc": [{
         "name": "entrypoint",
         "datatype": "S",
@@ -150,12 +151,12 @@ export default function CreateFund() {
       {
         "name": "H",
         "datatype": "S",
-        "value": sha256(event.target.island.value).toString()
+        "value": island
       },
       {
         "name": "i",
         "datatype": "U",
-        "value": index
+        "value": parseInt(index)
       },
       {
         "name": "M",
@@ -166,6 +167,11 @@ export default function CreateFund() {
         "name": "m",
         "datatype" : "S",
         "value": metadata
+      },
+      {
+        "name":"j",
+        "datatype":"U",
+        "value":j
       }
       ]
     }))
@@ -178,7 +184,7 @@ export default function CreateFund() {
 
 
 
-  
+  setSearchParams({"status":"success"})
 
   })
 
@@ -186,14 +192,14 @@ export default function CreateFund() {
 
   return (
     <div className="function">
-      <div className="profile">
+{    searchParams.get("status")=="success"?<Success/>:  <div className="profile">
       
       
       
       <h3>Add a Smoke Signal</h3>
-      <p>If you already own an island, adding a smoke signal costs 1 Coco. Please ensure island name matches exactly, or it will be considered fraudulent and won't be displayed. If you don't already have an island, this will create one for you and it will cost you 10 Coco.</p>
+      <p>This will cost 100 coco. If you don't have enough coco you will be charged 0.1 Dero instead.</p>
       <form onSubmit={DoIt}>
-        <input placeholder="Island (case-sensitive)" id="island" type="text" />
+        
         <input placeholder="Name" id="fundName" type="text" />
         <input placeholder="Image URL" id="fundPhoto" type="text"/>
         <input placeholder="Tagline" id="tagline" type="text" />
@@ -205,7 +211,7 @@ export default function CreateFund() {
         <input placeholder="Address" id="address" type="text" />
         <button type={"submit"}>Create</button>
       </form>
-    </div>
+    </div>}
     </div>
   )
 }

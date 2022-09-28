@@ -21,6 +21,13 @@ export default function OAO() {
   const [allowance, setAllowance] = React.useState(null)
   const [balance, setBalance] = React.useState(null)
   const [balanceAsset, setBalanceAsset] = React.useState(null)
+  const [voteIndex,setVoteIndex] = React.useState(null)
+  const [balanceList,setBalanceList] = React.useState([])
+  const [allowanceList,setAllowanceList] = React.useState([])
+  const [voteList,setVoteList] = React.useState([])
+  const [ID,setID] = React.useState([])
+  const [expires,setExpires] = React.useState(null)
+  const oaoSCID = "875e8101b793ff71be181d7fa6b0337e6f24d85103c381bf92d36c23efc33acd"
 
   function hex2a(hex) {
     var str = '';
@@ -34,6 +41,73 @@ export default function OAO() {
     event.preventDefault();
     setHash(sha256(event.target.code.value).toString())
   }
+
+  const getOAO = React.useCallback(async ()=>{
+    const deroBridgeApi = state.deroBridgeApiRef.current
+    const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
+      scid:oaoSCID,
+      code:false,
+      variables:true
+    }))
+    setVacant(res.data.result.stringkeys.vacantSeats)
+
+    let idSearch = /\bmember_\d{1,2}\b/
+   let id= Object.keys(res.data.result.stringkeys)
+    .filter(key=>idSearch.test(key))
+    .filter(key=>hex2a(res.data.result.stringkeys[key])==state.userAddress)
+    .map(key=>key.substring(key.length-1,key.length))
+    
+    setID(id[0])
+
+    var expiry = Math.round((res.data.result.stringkeys[`member_${id[0]}_expiry`]*1000 - parseInt(new Date().getTime()))/(1000*60*60*24))
+  console.log(id[0],expiry)
+    setExpires(expiry)
+
+  let bl= Object.keys(res.data.result.balances)
+.map(x=><p>Balance of {x=="0000000000000000000000000000000000000000000000000000000000000000"?"Dero":x}: {res.data.result.balances[x]} (atomic units)</p>)
+setBalanceList(bl)
+
+var search = new RegExp(`weeklyAllowance_.*`)
+let allowances = Object.keys(res.data.result.stringkeys)
+.filter(key=>search.test(key))
+.map(key=><p>CEO's Weekly Allowance for {key.substring(16,key.length)}: {res.data.result.stringkeys[key]}(atomic units)</p>)
+
+setAllowanceList(allowances)
+
+  setVoteIndex(res.data.result.stringkeys.voteIndex)
+  let i = res.data.result.stringkeys.voteIndex-1
+
+  let type = "vote_" +i+"_type"
+  let voteType=res.data.result.stringkeys[type]
+
+  let status= "vote_"+i+"_status"
+  let voteStatus=res.data.result.stringkeys[status]
+
+  let amountOrSeat = "vote_"+i+"_amountOrSeat"
+  let voteAOS = res.data.result.stringkeys[amountOrSeat]
+
+  let address = "vote_"+i+"_address"
+  let voteAddress = hex2a(res.data.result.stringkeys[address])
+
+
+ 
+  setStatus(voteStatus)
+  setType(voteType)
+  setAOS(voteAOS)
+  setAddress(voteAddress)
+  var votes=[]
+  for(var k=0;k<i+1;k++){
+    votes.push(k)
+  }
+
+setVoteList(votes.map(x=><option value={x}>{x}</option>))
+
+
+  })
+
+  React.useEffect(()=>{
+    getOAO()
+  },[state])
 
   const checkVacancy = React.useCallback(async (event) => {
     event.preventDefault();
@@ -60,7 +134,7 @@ export default function OAO() {
    event.preventDefault();
   const deroBridgeApi = state.deroBridgeApiRef.current
   const [err, res] = await to(deroBridgeApi.daemon('get-sc', {
-          scid:event.target.scid.value,
+          scid:oaoSCID,
           code:false,
           variables:true
   }))
@@ -150,7 +224,7 @@ setBalanceAsset(asset)
     event.preventDefault();
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
-    	"scid": event.target.scid.value,
+    	"scid": oaoSCID,
     	"ringsize": 2,
     	"sc_rpc": [{
     		"name": "entrypoint",
@@ -160,7 +234,7 @@ setBalanceAsset(asset)
         {
     		"name": "id",
     		"datatype": "U",
-    		"value": parseInt(event.target.id.value)
+    		"value": parseInt(ID)
     	},
       {
     		"name": "address",
@@ -189,7 +263,7 @@ setBalanceAsset(asset)
       }
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
-    	"scid": event.target.scid.value,
+    	"scid": oaoSCID,
     	"ringsize": 2,
     	"sc_rpc": [{
     		"name": "entrypoint",
@@ -222,7 +296,7 @@ setBalanceAsset(asset)
     event.preventDefault();
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
-    	"scid": event.target.scid.value,
+    	"scid": oaoSCID,
     	"ringsize": 2,
     	"sc_rpc": [{
     		"name": "entrypoint",
@@ -232,12 +306,12 @@ setBalanceAsset(asset)
         {
     		"name": "voteIndex",
     		"datatype": "U",
-    		"value": parseInt(event.target.voteIndex.value)
+    		"value": parseInt(voteIndex-1)
     	},
         {
     		"name": "voterID",
     		"datatype": "U",
-    		"value": parseInt(event.target.voterID.value)
+    		"value": parseInt(ID)
     	},
         {
     		"name": "opinion",
@@ -251,11 +325,11 @@ setBalanceAsset(asset)
   })
 
 
-  const closeVote = React.useCallback(async (event) => {
-    event.preventDefault();
+  const closeVote = React.useCallback(async () => {
+    
     const deroBridgeApi = state.deroBridgeApiRef.current
     const [err, res] = await to(deroBridgeApi.wallet('start-transfer', {
-    	"scid": event.target.scid.value,
+    	"scid": oaoSCID,
     	"ringsize": 2,
     	"sc_rpc": [{
     		"name": "entrypoint",
@@ -265,7 +339,7 @@ setBalanceAsset(asset)
         {
     		"name": "voteIndex",
     		"datatype": "U",
-    		"value": parseInt(event.target.voteIndex.value)
+    		"value": parseInt(voteIndex-1)
     	}]
     }))
 
@@ -273,21 +347,6 @@ setBalanceAsset(asset)
     console.log(res)
   })
 
-  const Refresh= async ()=>{
-    const response = await fetch('/api/refresh');
-    const token = await response.json()
-    console.log("refresh says token is",token.accessToken)
-    setState(state=>({...state,token:token.accessToken}))
-    setState(state=>({...state,loggedIn:true}))
-    return token.accessToken
-  }
-
-  
-
-  React.useEffect(()=>{
-    console.log("refresh token")
-    Refresh()
-  },[])
 
 
 
@@ -302,11 +361,28 @@ setBalanceAsset(asset)
 
     
     <h1> Board Functions </h1>
+    <p>Your Seat (#{ID}) {expires<0?<>is expired</>:<>expires in {expires} days</> };Seats Filled: {12-vacant}/12; Total Votes: {voteIndex};{balanceList}{allowanceList}</p>
+   
     <div className="function">
-    <h3> Open Vote </h3>
+      {status==0?<>
+       <p> Motion to {type === 0 ? "hire "+ address +" as new CEO": type === 1 ? "fire CEO": type === 2 ? "add "+ address +" as board member "+ AOS : type === 3? "remove " +address +" from seat " +AOS : type === 4? "set weekly allowance of " +address +" to "+ AOS/100000 
+  : "Update OAO Contract code. Hash of proposed code is: "+address}
+{status === 0? ": Open" : status === 1 ? ": Passed" : status === 2? ": Rejected": ""}</p>
+<h3> Cast Vote</h3>
+    <form onSubmit={castVote}>
+    
+      <select id="opinion" name="opinion">
+        <option value="0"> no </option>
+        <option value="1"> yes</option>
+      </select>
+      <button type={"submit"}>Cast Vote</button>
+    </form>
+    <button onClick={()=>closeVote()}>Close Vote</button>
+</>
+   :<>
+    <h3> Open a Vote </h3>
     <form onSubmit={openVote}>
-      <p>Your OAO Contract's SCID </p>
-      <input id="scid" type="text" />
+   
     	<p>Motion </p>
       <select onChange={updateOpenVoteMotion} id="motion" name="motion">
         <option value="0">Hire CEO</option>
@@ -343,80 +419,18 @@ setBalanceAsset(asset)
     	
     	<button type={"submit"}>Open Vote</button>
     </form>
+    </> }
     </div>
 
     <div className="function">
-    <h3> Cast Vote</h3>
-    <form onSubmit={castVote}>
-      <p>Your OAO Contract's SCID</p>
-      <input id="scid" type="text" />
-      <p>Vote Index</p>
-      <input id="voteIndex" type="text"/>
-      <p>Voter ID </p>
-      <input id="voterID" type="text"/>
-      <select id="opinion" name="opinion">
-        <option value="0"> no </option>
-        <option value="1"> yes</option>
-      </select>
-      <button type={"submit"}>Cast Vote</button>
-    </form>
-    </div>
-
-  <div className="function">
-    <h3> Close Vote</h3>
-    <form onSubmit={closeVote}>
-      <p>Your OAO Contract's SCID</p>
-      <input id="scid" type="text" />
-      <p>Vote Index</p>
-      <input id="voteIndex" type="text"/>
-      <button type={"submit"}>Close Vote</button>
-    </form>
-    
-  </div>
-
- 
-
-
-  
-<div className="function">
-<h3> Transfer Seat</h3>
-  <form onSubmit={transferSeat}>
-    <p>Your OAO Contract's SCID</p>
-    <input id="scid" type="text" />
-
-    <p>Seat ID</p>
-    <input id="id" type="text" />
-
-    <p>Address</p>
-    <input id="address" type="text" />
-
-    <button type={"submit"}>Transfer Seat</button>
-  </form>
-  </div>
-  <div className="function">
-    <h3>Check Contract Balance</h3>
-    <h4>Balance is {balance} {balanceAsset}</h4>
-    <form onSubmit={checkBalance}>
-      <p>Your OAO Contract's SCID</p>
-      <input id="scid" type="text"/>
-      <p>Asset</p>
-      <input id="asset" type="text"/>
-      <button type={"submit"}>Check Balance</button>
-    </form>
-    </div>
-
-    
-
-    <div className="function">
-    <h3> Check Vote</h3>
+    <h3> Vote History</h3>
   <p> Motion to {type === 0 ? "hire "+ address +" as new CEO": type === 1 ? "fire CEO": type === 2 ? "add "+ address +" as board member "+ AOS : type === 3? "remove " +address +" from seat " +AOS : type === 4? "set weekly allowance of " +address +" to "+ AOS/100000 
   : "Update OAO Contract code. Hash of proposed code is: "+address}
 {status === 0? ": Open" : status === 1 ? ": Passed" : status === 2? ": Rejected": ""}</p>
   <form onSubmit={checkVote}>
-    <p>Your OAO Contract's SCID</p>
-    <input id="scid" type="text" />
+    
     <p>Vote Index</p>
-    <input id="index" type="text" />
+    <select id="index">{voteList}</select>
     <button type={"submit"}>Check Vote</button>
   </form>
   {type === 5?
@@ -429,28 +443,25 @@ setBalanceAsset(asset)
   :""
 }
   </div>
+  
+<div className="function">
+<h3> Transfer Seat</h3>
+  <form onSubmit={transferSeat}>
 
-  <div className="function">
-  <h3> Check Weekly Allowance</h3>
-  <p>Allowance for {assetCheck} is {allowance}</p>
-  <form onSubmit={checkAllowance}>
-    <p>Your OAO Contract's SCID</p>
-    <input id="scid" type="text" />
-    <p>Asset</p>
-    <input id="asset" type="text" />
-    <button type={"submit"}>Check Allowance</button>
+    <p>Address</p>
+    <input id="address" type="text" />
+
+    <button type={"submit"}>Transfer Seat</button>
   </form>
   </div>
-  <div className="function">
-    <h3>Vacant Seats</h3>
-    <h4>{vacant}</h4>
-  <form onSubmit={checkVacancy}>
-    <p>Your OAO Contract's SCID</p>
-    <input id="scid" type="text" />
-    <button type={"submit"}>Check Vacancy</button>
-  </form>
+
+
     
-    </div>
+
+
+
+
+
 
   </div>
         </div>

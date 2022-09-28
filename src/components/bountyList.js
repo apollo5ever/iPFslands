@@ -42,7 +42,7 @@ export default function BountyList(){
 
     let fundList= Object.keys(scData)
      .filter(key => search.test(key))
-     .map(key=>[hex2a(scData[key]),scData[key.substring(0,66)+"Expiry"],scData[key.substring(0,66)+"Treasure"],scData[key.substring(0,66)+"Judge"],key.substring(0,65)])
+     .map(key=>[hex2a(scData[key]),scData[key.substring(0,key.length-2)+"E"],scData[key.substring(0,key.length-2)+"T"],scData[key.substring(0,key.length-2)+"J"],key.substring(0,key.length-3),scData[key.substring(0,key.length-2)+"JN"],scData[key.substring(0,key.length-2)+"JF"]])
      
      console.log("hash array",fundList)
      
@@ -54,21 +54,23 @@ export default function BountyList(){
       for await (const buf of state.ipfs.cat(fundList[i][0].toString())){
         try{
         let fund = JSON.parse(buf.toString())
-        console.log(fund.island)
-        console.log(sha256(fund.island).toString())
-        console.log(fundList[i][4].substring(0,64))
-       if(sha256(fund.island).toString()!=fundList[i][4].substring(0,64)) continue
+     
+       if(fund.island!=fundList[i][4].substring(0,fundList[i][4].length-1)) continue
        
-        fund.index=fundList[i][4].substring(64,65)
+        fund.index=fundList[i][4].substring(fundList[i][4].length-1)
         fund.expiry = fundList[i][1]
         fund.treasure = fundList[i][2]/100000
         fund.judge = fundList[i][3]
+        fund.JN = fundList[i][5]
+        fund.JF = fundList[i][6]
         
-        if(fund.expiry> new Date().getTime()/1000) fund.status=0
+        if(fund.JF==2) fund.status=1
+        else if(fund.expiry<new Date().getTime()/1000) fund.status=2
+        else fund.status=0
        
         setFunds(funds=>[...funds,fund])
         console.log("fundz",funds)
-      
+      console.log("status",fund.expiry)
     } catch(error){
       console.log(error)
     }
@@ -103,7 +105,7 @@ for await (const buf of state.ipfs.cat(cid)) {
         if(searchParams.get("status") && f.status!=searchParams.get("status")) return
         if(searchParams.get("island") && f.island!=searchParams.get("island")) return
         
-         return(<div className="function"><NavLink to={`/island/${f.island}/treasure/${f.index}`}><TreasureCard image={f.image} index={f.index} treasure={f.treasure} deadline={f.deadline} profile={f.island} name={f.name} tagline={f.tagline}/></NavLink></div>)
+         return(<div className="function"><TreasureCard JN={f.JN} image={f.image} index={f.index} treasure={f.treasure} deadline={f.deadline} profile={f.island} name={f.name} tagline={f.tagline} /></div>)
         
         })
 
@@ -116,14 +118,14 @@ for await (const buf of state.ipfs.cat(cid)) {
 
       return(
          <div> 
-            <div className="function">
+            <div>
                 
-            <h1>Buried Treasure</h1>
+            <h1>Buried Treasure Bounties</h1>
             <div className="status-selector">
             <ul>
-                <li className="status-selector-option" onClick={()=>setSearchParams({"status":0})}>Active</li>
-                <li onClick={()=>setSearchParams({"status":1})}>Successes</li>
-                <li onClick={()=>setSearchParams({"status":2})}>Failures</li>
+                <li className="status-selector-option" onClick={()=>setSearchParams({"filter":"treasure","status":0})}>Active</li>
+                <li onClick={()=>setSearchParams({"filter":"treasure","status":1})}>Successes</li>
+                <li onClick={()=>setSearchParams({"filter":"treasure","status":2})}>Failures</li>
             </ul>
             </div>
             {fundJSX}
