@@ -15,9 +15,10 @@
 body {
   background: rgb(83, 99, 243);
  
-  background-size: 100vw 70vw;
+  background-size: cover;
+  background-position:center;
   background-attachment: fixed;
-  background-image:url('./images/DeroIslandsLogo3.png');
+  background-image:url('./images/DeroIslandsLogo3.jpg');
   text-align:center;
   
   
@@ -244,7 +245,7 @@ footer {
 
 
 .icons-treasure{
-  background-image:url('./images/DeroIslands-Treasure_Chest1.png');
+  background-image:url('./images/DeroIslands-Treasure_Chest1_400.png');
   
  background-position:center;
   background-size: 8vw 8vw;
@@ -259,7 +260,7 @@ footer {
 }
 
 .icons-signal{
-  background-image:url('./images/DeroIslands-Smoke_Signals1.png');
+  background-image:url('./images/DeroIslands-Smoke_Signals1_400.png');
  background-position:center;
   background-size: 8vw 8vw;
   margin:2vw;
@@ -272,7 +273,7 @@ footer {
   display:flex;
 }
 .icons-mail{
-  background-image:url('./images/DeroIslandsLogo3.png');
+  background-image:url('./images/DeroIslandsLogo3.jpg');
  background-position:center;
   background-size: 8vw 8vw;
   margin:2vw;
